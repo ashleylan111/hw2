@@ -16,10 +16,36 @@ std::string convToLower(std::string src)
 std::set<std::string> parseStringToWords(string rawWords)
 {
 
+  std::set<std::string> keywords;
+  std::string word;
 
+  for (size_t i = 0; i < rawWords.size(); i++){
+    char r = rawWords[i];
 
+    //1. Checking if rawWords is punctuation or not 
+    if (std::isalnum(r)){
+      //if alphanumeric = letters
+      word += std::tolower(r); //Convert to lowercase - note case sensitivity
 
+    } else {
+      //if non-alphanumeric = delimiter
+      if (word.size() >= 2){
+        keywords.insert(word);
 
+      }
+      word.clear(); //if just punctuation, do not add
+    }
+
+    //2. If string doees not end in punctuation
+    if (word.size() >= 2){
+      keywords.insert(word);
+    }
+
+    
+
+  }
+
+  return keywords;
 
 
 

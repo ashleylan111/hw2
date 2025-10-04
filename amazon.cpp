@@ -9,6 +9,7 @@
 #include "db_parser.h"
 #include "product_parser.h"
 #include "util.h"
+#include "mydatastore.h"
 
 using namespace std;
 struct ProdNameSorter {
@@ -29,8 +30,9 @@ int main(int argc, char* argv[])
      * Declare your derived DataStore object here replacing
      *  DataStore type to your derived type
      ****************/
-    DataStore ds;
 
+    //MyDataStore will be a subclass of DataStore
+    MyDataStore* ds = new MyDataStore();
 
 
     // Instantiate the individual section and product parsers we want
@@ -46,7 +48,7 @@ int main(int argc, char* argv[])
     parser.addSectionParser("users", userSectionParser);
 
     // Now parse the database to populate the DataStore
-    if( parser.parse(argv[1], ds) ) {
+    if( parser.parse(argv[1], *ds)) {
         cerr << "Error parsing!" << endl;
         return 1;
     }
@@ -77,7 +79,7 @@ int main(int argc, char* argv[])
                     term = convToLower(term);
                     terms.push_back(term);
                 }
-                hits = ds.search(terms, 0);
+                hits = ds->search(terms, 0);
                 displayProducts(hits);
             }
             else if ( cmd == "OR" ) {
@@ -87,22 +89,51 @@ int main(int argc, char* argv[])
                     term = convToLower(term);
                     terms.push_back(term);
                 }
-                hits = ds.search(terms, 1);
+                hits = ds->search(terms, 1);
                 displayProducts(hits);
             }
             else if ( cmd == "QUIT") {
                 string filename;
                 if(ss >> filename) {
                     ofstream ofile(filename.c_str());
-                    ds.dump(ofile);
+                    ds->dump(ofile);
                     ofile.close();
                 }
                 done = true;
             }
 	    /* Add support for other commands here */
+            else if (cmd == "ADD"){
+                string username;
+                int hitIdx;
+                if (ss >> username >> hitIdx){
+                    if(hits.empty() || hitIdx < 1 || hitIdx > (int)hits.size()){
+                        cout <<"Invalid request" << endl;
+                    } else {
+                        ds->addToCart(convToLower(username), hits[hitIdx - 1]);
+                    }
+                } else {
+                    cout <<"Invalid request" << endl;
+                }
 
-
-
+            }
+            else if (cmd == "VIEWCART"){
+                string username;
+                if (ss >> username){
+                    ds->viewCart(convToLower(username));
+                } else {
+                    cout << "Invalid username" << endl;
+                }
+                
+            }
+            else if (cmd == "BUYCART"){
+                string username;
+                if (ss >> username){
+                    ds->buyCart(convToLower(username));
+                } else {
+                    cout << "Invalid username" << endl;
+                }
+                
+            }
 
             else {
                 cout << "Unknown command" << endl;
@@ -110,7 +141,11 @@ int main(int argc, char* argv[])
         }
 
     }
+
+    delete ds;
     return 0;
+
+    
 }
 
 void displayProducts(vector<Product*>& hits)
@@ -127,4 +162,5 @@ void displayProducts(vector<Product*>& hits)
         cout << endl;
         resultNo++;
     }
+
 }
